@@ -8,6 +8,40 @@ use One23\PathNormalizer;
 
 class PathTest extends TestCase
 {
+    public function testCut() {
+        $this->assertSame(
+            "/bar/baz",
+            Path::cut(['foo', 'bar', 'baz'], ['foo'])
+        );
+
+        $this->assertSame(
+            "/bar/baz",
+            Path::cut(['foo', 'bar', 'baz'], ['', 'foo'])
+        );
+
+        $this->assertSame(
+            "/bar/baz",
+            Path::cut(['', 'foo', 'bar', 'baz'], ['foo'])
+        );
+    }
+
+    public function testAbsolute() {
+        $this->assertSame(
+            "/foo/bar/baz",
+            Path::absolute(['foo', 'bar', 'baz'])
+        );
+
+        $this->assertSame(
+            "/foo/bar/baz",
+            Path::absolute(['/foo', 'bar', 'baz'])
+        );
+
+        $this->assertSame(
+            "/baz",
+            Path::absolute(['/foo', '..', 'baz'])
+        );
+    }
+
     public function testArgumentVariations()
     {
         $this->assertPath(['foo', 'bar', 'baz'], Path::normalize(['foo', 'bar', 'baz']));

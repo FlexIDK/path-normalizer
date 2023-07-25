@@ -6,7 +6,7 @@ class Path implements \Stringable
 {
     protected string $separator = DIRECTORY_SEPARATOR;
 
-    protected array $path = [];
+    protected array $parts = [];
 
     protected ?string $file = null;
 
@@ -22,16 +22,19 @@ class Path implements \Stringable
             ->toString();
     }
 
+    public static function absolute(
+        array|string $path,
+        string $separator = null
+    ): string {
+        return (new static($path, $separator))
+            ->setAbsolute()
+            ->toString();
+    }
+
     public function __construct(array|string $path, string $separator = null)
     {
         if (! is_null($separator)) {
-            if (! in_array($separator, [
-                '/', '\\',
-            ])) {
-                throw new Exception('directory separator only `/` on `\\`');
-            } else {
-                $this->separator = $separator;
-            }
+            $this->setSeparator($separator);
         }
 
         if (is_array($path) && empty($path)) {
@@ -42,11 +45,42 @@ class Path implements \Stringable
 
         //
 
-        $this->setFile($parts);
-        $this->setAbsolute($parts, $path);
-        $this->resolve($parts);
+        $this->detectFile($parts);
+        $this->detectAbsolute($parts, $path);
 
-        $this->path = $parts;
+        $this->parts = $parts;
+    }
+
+    public function setAbsolute(bool $absolute = true): static {
+        $this->isAbsolute = $absolute;
+
+        return $this;
+    }
+
+    public function setSeparator(string $separator): static {
+        if (! in_array($separator, [
+            '/', '\\',
+        ])) {
+            throw new Exception('directory `separator` only `/` on `\\`');
+        }
+
+        $this->separator = $separator;
+
+        return $this;
+    }
+
+    public function setDrive(string $drive = null): static {
+        if (is_null($drive)) {
+            $this->drive = null;
+        }
+
+        if (!preg_match('#^[a-z]$#', $drive)) {
+            throw new Exception('`drive` can be only [a-z]{1}');
+        }
+
+        $this->drive = $drive;
+
+        return $this;
     }
 
     protected function isValidPath(string $path): bool
@@ -87,27 +121,29 @@ class Path implements \Stringable
         }
     }
 
-    protected function resolve(array &$parts): void
-    {
+    protected function path(): array {
         $res = [];
-        foreach ($parts as $path) {
-            if ($path === '..') {
+
+        foreach ($this->parts as $part) {
+            if ($part === '..') {
                 $this->resolveParent($res);
-            } elseif ($this->isValidPath($path)) {
-                $res[] = $path;
+            } elseif ($this->isValidPath($part)) {
+                $res[] = $part;
             }
         }
 
-        $parts = $res;
+        return $res;
     }
 
-    protected function setAbsolute(array &$parts, string|array $path): void
+    protected function detectAbsolute(array &$parts, string|array $path): void
     {
         if (
             $parts[0] === ''
         ) {
             $this->isAbsolute = true;
             $this->drive = null;
+
+            array_shift($parts);
 
             return;
         }
@@ -125,15 +161,16 @@ class Path implements \Stringable
         $this->drive = null;
     }
 
-    protected function setFile(array &$parts): void
+    protected function detectFile(array &$parts): void
     {
         $end = end($parts);
 
         if (
-            $end
+            is_string($end)
+            && $end !== ''
             && $end !== '.'
             && $end !== '..'
-            && !preg_match('#^[a-z]:$#i', $end)
+            && !str_contains($end, ':')
         ) {
             array_pop($parts);
 
@@ -143,26 +180,47 @@ class Path implements \Stringable
         }
     }
 
+    protected function part2array(string $path): array {
+        $path = trim($path);
+
+        if ($path === '') {
+            return [];
+        }
+
+        return array_map(function($val) {
+            return trim($val);
+        }, preg_split('#[/\\\\]+#', $path));
+    }
+
     protected function parts(array|string $path): array
     {
-        if (is_string($path)) {
-            $path = trim($path);
-            if ($path === '') {
-                return [];
-            }
-
-            return preg_split('#[/\\\\]+#', trim($path));
-        }
+        $items = is_array($path)
+            ? $path
+            : $this->part2array($path);
 
         $res = [];
-        foreach ($path as $val) {
-            $res = [
-                ...$res,
-                ...$this->parts($val),
-            ];
+        foreach ($items as $val) {
+            $res[] = $val;
         }
 
-        return $res;
+        if (empty($res)) {
+            return [];
+        }
+
+        $str = preg_replace(
+            '#[/\\\\]+#',
+            $this->separator,
+            implode($this->separator, $res)
+        );
+
+        if ($str === '') {
+            return [];
+        }
+
+        return explode(
+            $this->separator,
+            $str
+        );
     }
 
     public function __toString(): string
@@ -186,7 +244,7 @@ class Path implements \Stringable
     public function toArray(): array
     {
         $res = array_filter([
-            ...$this->path,
+            ...$this->path(),
 
             $this->getFile(),
         ], function ($val) {
@@ -273,6 +331,17 @@ class Path implements \Stringable
                 $this->isAbsolute
                     ? $this->separator
                     : '').
-            implode($this->separator, $this->path);
+            implode($this->separator, $this->path());
+    }
+
+    public static function cut(array|string $haystack, array|string $needle, string $separator = null) {
+        $haystack = static::absolute($haystack, $separator);
+        $needle = static::absolute($needle, $separator);
+
+        if (!str_starts_with($haystack, $needle)) {
+            throw new Exception('`haystack` not contain `separator`');
+        }
+
+        return mb_substr($haystack, mb_strlen($needle));
     }
 }
