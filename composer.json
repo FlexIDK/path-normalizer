@@ -1,0 +1,34 @@
+{
+    "name": "one23/path-normalizer",
+    "keywords": [
+        "path helper",
+        "path normalize",
+        "normalize",
+        "path"
+    ],
+    "type": "library",
+    "homepage": "https://github.com/FlexIDK/path-normalizer",
+    "description": "Path normalizer and helper",
+    "license": "MIT",
+    "version": "v0.1",
+    "authors": [
+    ],
+    "require": {
+        "php": "^8"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.2.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "One23\\PathNormalizer\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "One23\\PathNormalizer\\Unit\\": "tests/Unit"
+        }
+    },
+    "extra": {
+    }
+}
