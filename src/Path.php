@@ -38,7 +38,7 @@ class Path implements \Stringable
         }
 
         if (is_array($path) && empty($path)) {
-            throw new Exception('Must provide at least one `path`');
+            throw new Exception('Must provide at least one `path`: empty array');
         }
 
         $parts = $this->parts($path);
@@ -61,7 +61,7 @@ class Path implements \Stringable
         if (! in_array($separator, [
             '/', '\\',
         ])) {
-            throw new Exception('directory `separator` only `/` on `\\`');
+            throw new Exception("directory `separator` only `/` on `\\`: `{$separator}`");
         }
 
         $this->separator = $separator;
@@ -75,7 +75,7 @@ class Path implements \Stringable
         }
 
         if (!preg_match('#^[a-z]$#', $drive)) {
-            throw new Exception('`drive` can be only [a-z]{1}');
+            throw new Exception("`drive` can be only [a-z]{1}: `{$drive}`");
         }
 
         $this->drive = $drive;
@@ -86,7 +86,7 @@ class Path implements \Stringable
     protected function isValidPath(string $path): bool
     {
         if (str_contains($path, ':')) {
-            throw new Exception('Invalid path character ":"');
+            throw new Exception("Invalid path character `:`: `{$path}`");
         }
 
         if (
@@ -339,7 +339,7 @@ class Path implements \Stringable
         $needle = static::absolute($needle, $separator);
 
         if (!str_starts_with($haystack, $needle)) {
-            throw new Exception('`haystack` not contain `separator`');
+            throw new Exception("`haystack` not contain `separator`: `{$haystack}` / `{$separator}`");
         }
 
         return mb_substr($haystack, mb_strlen($needle));

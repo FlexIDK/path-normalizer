@@ -10,7 +10,7 @@
     "homepage": "https://github.com/FlexIDK/path-normalizer",
     "description": "Path normalizer and helper",
     "license": "MIT",
-    "version": "v0.1.2",
+    "version": "v0.1.3",
     "authors": [
     ],
     "require": {
