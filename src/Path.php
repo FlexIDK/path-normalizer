@@ -116,7 +116,10 @@ class Path implements \Stringable
             return;
         }
 
-        if ($cnt && $res[$cnt - 1] !== '..') {
+        if (
+            $cnt > 0
+            && $res[$cnt - 1] !== '..'
+        ) {
             array_pop($res);
         }
     }
@@ -124,11 +127,16 @@ class Path implements \Stringable
     protected function path(): array {
         $res = [];
 
-        foreach ($this->parts as $part) {
-            if ($part === '..') {
+        $cnt = count($this->parts);
+        foreach ($this->parts as $idx => $val) {
+            if ($val === '..') {
                 $this->resolveParent($res);
-            } elseif ($this->isValidPath($part)) {
-                $res[] = $part;
+            }
+            elseif ($val === '' && $idx === $cnt - 1) {
+                $res[] = $val;
+            }
+            elseif ($this->isValidPath($val)) {
+                $res[] = $val;
             }
         }
 
@@ -137,9 +145,11 @@ class Path implements \Stringable
 
     protected function detectAbsolute(array &$parts, string|array $path): void
     {
-        if (
-            $parts[0] === ''
-        ) {
+        if (! array_key_exists(0, $parts)) {
+            return;
+        }
+
+        if ($parts[0] === '') {
             $this->isAbsolute = true;
             $this->drive = null;
 
@@ -194,14 +204,9 @@ class Path implements \Stringable
 
     protected function parts(array|string $path): array
     {
-        $items = is_array($path)
+        $res = is_array($path)
             ? $path
             : $this->part2array($path);
-
-        $res = [];
-        foreach ($items as $val) {
-            $res[] = $val;
-        }
 
         if (empty($res)) {
             return [];

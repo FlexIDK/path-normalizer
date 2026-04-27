@@ -72,8 +72,14 @@ class PathTest extends TestCase
 
     public function testRelativePaths()
     {
+        $this->assertSame('abc/abc/', Path::normalize('abc/abc/'));
+
         $this->assertPath(['', ''], Path::normalize(['', '/', '//']));
         $this->assertPath(['foo', 'bar'], Path::normalize(['foo', '/bar']));
+
+        $this->assertSame('abc', Path::normalize('abc'));
+        $this->assertSame('abc/abc', Path::normalize('abc/abc'));
+        $this->assertSame('', Path::normalize(''));
     }
 
     public function testDirectorySeparators()
